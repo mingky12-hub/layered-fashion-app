@@ -1,6 +1,5 @@
 import streamlit as st
 import json
-import requests
 from google import genai
 from google.genai import types
 
@@ -174,16 +173,30 @@ def generate_recommendation(api_key, location, commute, time_range, user_sens):
         "required": ["weatherSummary", "outfit", "actionableTips"]
     }
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            response_mime_type="application/json",
-            response_schema=schema,
-            temperature=0.2,
-        ),
-    )
+    # models/gemini-2.5-flash deprecated 에러를 방지하기 위해 최신 모델(gemini-3.8-flash)로 호출
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                response_mime_type="application/json",
+                response_schema=schema,
+                temperature=0.2,
+            ),
+        )
+    except Exception:
+        # gemini-3.8-flash 호출 불가 시 gemini-1.5-flash로 자동 대체
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                response_mime_type="application/json",
+                response_schema=schema,
+                temperature=0.2,
+            ),
+        )
     return json.loads(response.text)
 
 if submit_btn:
