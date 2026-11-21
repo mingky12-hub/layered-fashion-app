@@ -173,7 +173,7 @@ def generate_recommendation(api_key, location, commute, time_range, user_sens):
         "required": ["weatherSummary", "outfit", "actionableTips"]
     }
 
-    # models/gemini-2.5-flash deprecated 에러를 방지하기 위해 최신 모델(gemini-3.8-flash)로 호출
+    # 최신 지원 모델(gemini-3.8-flash) 호출 및 예외 시 자동 fallback
     try:
         response = client.models.generate_content(
             model="gemini-3.8-flash",
@@ -186,60 +186,5 @@ def generate_recommendation(api_key, location, commute, time_range, user_sens):
             ),
         )
     except Exception:
-        # gemini-3.8-flash 호출 불가 시 gemini-1.5-flash로 자동 대체
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                response_mime_type="application/json",
-                response_schema=schema,
-                temperature=0.2,
-            ),
-        )
-    return json.loads(response.text)
-
-if submit_btn:
-    if not gemini_api_key:
-        st.error("좌측 사이드바에 Gemini API Key를 입력해 주세요.")
-    else:
-        with st.spinner("오늘 날씨 분석 및 최적 레이어드 조합 계산 중..."):
-            try:
-                res = generate_recommendation(gemini_api_key, city, commute_type, hours, sensitivity)
-                w = res["weatherSummary"]
-                o = res["outfit"]
-                t = res["actionableTips"]
-
-                # 1. Weather Summary Card
-                st.markdown("#### 🌡️ 오늘 체감 기온 분석")
-                cols = st.columns(4)
-                cols[0].markdown(f'<div class="metric-card"><div class="metric-val">{w["morningTemp"]:+.0f}°</div><div class="metric-lbl">출근 체감</div></div>', unsafe_allow_html=True)
-                cols[1].markdown(f'<div class="metric-card"><div class="metric-val">{w["dayMaxTemp"]:+.0f}°</div><div class="metric-lbl">낮 최고</div></div>', unsafe_allow_html=True)
-                cols[2].markdown(f'<div class="metric-card"><div class="metric-val">{w["eveningTemp"]:+.0f}°</div><div class="metric-lbl">퇴근 체감</div></div>', unsafe_allow_html=True)
-                cols[3].markdown(f'<div class="metric-card"><div class="metric-val" style="color:#E11D48;">{w["tempDifference"]:.0f}°</div><div class="metric-lbl">일교차</div></div>', unsafe_allow_html=True)
-
-                st.caption(f"📌 **날씨 요약**: {w['condition']}")
-
-                # 2. Layered Outfit Card
-                st.markdown("#### 👕 3단 레이어드 코디 추천")
-                outfit_html = f"""
-                <div class="outfit-box">
-                    <div class="outfit-item"><span class="outfit-badge">아우터</span> <b>{o['outer']}</b></div>
-                    <div class="outfit-item"><span class="outfit-badge">미들웨어</span> <b>{o['middle']}</b></div>
-                    <div class="outfit-item"><span class="outfit-badge">이너</span> <b>{o['inner']}</b></div>
-                    <hr style="margin: 10px 0; border: none; border-top: 1px dashed #E2E8F0;">
-                    <div class="outfit-item"><span class="outfit-badge">하의</span> {o['bottom']}</div>
-                    <div class="outfit-item"><span class="outfit-badge">신발</span> {o['shoes']}</div>
-                    <div class="outfit-item"><span class="outfit-badge">소품</span> {', '.join(o['accessories'])}</div>
-                </div>
-                """
-                st.markdown(outfit_html, unsafe_allow_html=True)
-
-                # 3. Actionable Tips
-                st.markdown("#### 💡 실전 조절 가이드")
-                st.markdown(f'<div class="tip-box"><b>🚇 대중교통 팁:</b> {t["transitTip"]}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="tip-box"><b>🏢 실내 근무 팁:</b> {t["officeTip"]}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="warn-box"><b>⚠️ 오늘 피해야 할 아이템:</b> {t["caution"]}</div>', unsafe_allow_html=True)
-
-            except Exception as e:
-                st.error(f"오류가 발생했습니다: {str(e)}")
+            model
