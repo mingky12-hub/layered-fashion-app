@@ -42,14 +42,23 @@ def run_ai(key, loc, trans, tm, sens):
       "warn": "두꺼운 니트 단벌은 온도 조절에 불리합니다."
     }}
     """
-    res = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.2
-        )
+    cfg = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        temperature=0.2
     )
+
+    try:
+        res = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=prompt,
+            config=cfg
+        )
+    except Exception:
+        res = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=cfg
+        )
     return json.loads(res.text)
 
 if submit:
