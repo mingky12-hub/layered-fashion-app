@@ -43,7 +43,7 @@ def run_ai(key, loc, trans, tm, sens):
     }}
     """
     res = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-3.8-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
