@@ -55,7 +55,7 @@ def run_ai(key, loc, trans, tm, sens):
         )
     except Exception:
         res = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.8-flash",
             contents=prompt,
             config=cfg
         )
