@@ -48,13 +48,12 @@ with st.form("input_form"):
 
     submit_btn = st.form_submit_button("오늘의 레이어드 코디 추천받기", use_container_width=True)
 
-# 코디 생성 함수
 def generate_recommendation(api_key, location, commute, time_range, user_sens):
     client = genai.Client(api_key=api_key)
     
     sys_inst = (
         "당신은 일교차와 실내외 환경(대중교통 냉난방, 실내 온도)을 고려하는 패션 스타일리스트입니다. "
-        "주어진 조건에 맞춰 탈착이 용이한 최적의 3단 레이어드 코디를 JSON 형식으로 제안하세요."
+        "주어진 조건에 맞춰 탈착이 용이한 최적의 3단 레이어드 코디를 반드시 유효한 JSON 형식으로만 작성하세요."
     )
     
     prompt = f"""
@@ -64,7 +63,7 @@ def generate_recommendation(api_key, location, commute, time_range, user_sens):
     - 시간대: {time_range}
     - 체질: {user_sens}
     
-    오늘 날씨와 일교차, 실내외 전환을 고려해 아래 JSON 형식 그대로 작성해주세요:
+    현재 계절과 일교차를 고려해 아래 JSON 형식 그대로 작성해주세요:
     {{
       "weatherSummary": {{
         "morningTemp": 5,
@@ -75,22 +74,23 @@ def generate_recommendation(api_key, location, commute, time_range, user_sens):
       }},
       "outfit": {{
         "outer": "트렌치코트 또는 바람막이",
-        "middle": "얇은 가디건",
+        "middle": "가디건 또는 니트 조끼",
         "inner": "면 롱슬리브 티셔츠",
-        "bottom": "슬랙스 또는 스트레이트 데님",
-        "shoes": "로퍼 또는 스니커즈",
+        "bottom": "슬랙스 또는 데님 팬츠",
+        "shoes": "스니커즈 또는 로퍼",
         "accessories": ["가벼운 머플러", "휴대용 에코백"]
       }},
       "actionableTips": {{
-        "transitTip": "지하철 내부가 더울 땐 아우터를 벗어 팔에 걸쳐주세요.",
-        "officeTip": "사무실에서는 가디건만 단독으로 착용해 적정 체온을 유지하세요.",
-        "caution": "두꺼운 니트 단벌 착용은 실내외 온도차 대응에 불리합니다."
+        "transitTip": "지하철 내부 난방 시 아우터를 벗어 손에 걸쳐 체온을 조절하세요.",
+        "officeTip": "실내 근무 시에는 가디건만 단독으로 입어 쾌적함을 유지하세요.",
+        "caution": "두꺼운 헤비 니트 단벌은 실내외 급격한 온도차 대응에 불리합니다."
       }}
     }}
     """
     
+    # AI Studio 표준 모델인 gemini-2.0-flash 적용
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.0-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
             system_instruction=sys_inst,
@@ -102,7 +102,7 @@ def generate_recommendation(api_key, location, commute, time_range, user_sens):
 
 if submit_btn:
     if not gemini_api_key:
-        st.error("Gemini API Key를 입력해 주세요.")
+        st.error("좌측 사이드바에 Gemini API Key를 입력해 주세요.")
     else:
         with st.spinner("오늘 날씨 분석 및 최적 레이어드 조합 계산 중..."):
             try:
@@ -126,22 +126,4 @@ if submit_btn:
                 accs = ", ".join(o.get("accessories", []))
                 outfit_html = f"""
                 <div class="outfit-box">
-                    <div class="outfit-item"><span class="outfit-badge">아우터</span> <b>{o.get('outer', '-')}</b></div>
-                    <div class="outfit-item"><span class="outfit-badge">미들웨어</span> <b>{o.get('middle', '-')}</b></div>
-                    <div class="outfit-item"><span class="outfit-badge">이너</span> <b>{o.get('inner', '-')}</b></div>
-                    <hr style="margin: 10px 0; border: none; border-top: 1px dashed #E2E8F0;">
-                    <div class="outfit-item"><span class="outfit-badge">하의</span> {o.get('bottom', '-')}</div>
-                    <div class="outfit-item"><span class="outfit-badge">신발</span> {o.get('shoes', '-')}</div>
-                    <div class="outfit-item"><span class="outfit-badge">소품</span> {accs}</div>
-                </div>
-                """
-                st.markdown(outfit_html, unsafe_allow_html=True)
-
-                # 3. 실전 팁
-                st.markdown("#### 💡 실전 조절 가이드")
-                st.markdown(f'<div class="tip-box"><b>🚇 대중교통:</b> {t.get("transitTip", "-")}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="tip-box"><b>🏢 실내 근무:</b> {t.get("officeTip", "-")}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="warn-box"><b>⚠️ 주의사항:</b> {t.get("caution", "-")}</div>', unsafe_allow_html=True)
-
-            except Exception as e:
-                st.error(f"오류가 발생했습니다: {str(e)}")
+                    <div class="outfit-item"><span
